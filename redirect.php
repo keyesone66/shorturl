@@ -7,7 +7,7 @@ db_connect();
 //header("Content-Type:text/html;charset=utf-8");
 //mysql_real_escape_string() 函数转义 SQL 语句中使用的字符串中的特殊字符
 //trim — 去除字符串首尾处的空白字符（或者其他字符）
-$alias = trim(mysql_real_escape_string($_GET['alias']));
+$alias = trim($links,mysqli_real_escape_string($_GET['alias']));
 //var_dump($alias);die;
 get_st($alias);
 

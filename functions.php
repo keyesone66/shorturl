@@ -1,57 +1,40 @@
 <?php
 header("Content-type:text/html;charset=utf-8");
-function db_die($filename, $line, $message) {
-    die("文件: $filename<br />行: $line<br />信息: $message");
-}
-
-function db_ins_die($filename, $line, $message) {
-    die('<p style="color:red;">安装向导无法连接到使用指定的证书数据库。请返回再试一次。</p>');
-}
-
-function db_connect() {
-    mysql_connect(DB_HOSTNAME, DB_USERNAME, DB_PASSWORD) or db_die(__FILE__, __LINE__, mysql_error());
-    mysql_select_db(DB_NAME) or db_die(__FILE__, __LINE__, mysql_error());
+$links=mysqli_connect(DB_HOSTNAME, DB_USERNAME, DB_PASSWORD,DB_NAME) or db_die(__FILE__, __LINE__, mysqli_error());
 
     if (DB_VERSION > 4) {
-        mysql_query("SET NAMES 'utf8'") or db_die(__FILE__, __LINE__, mysql_error());
+         mysqli_set_charset($links,'UTF8') or db_die(__FILE__, __LINE__, mysqli_error());
     }
-}
 
-function db_ins_connect() {
-    mysql_connect(DB_HOSTNAME, DB_USERNAME, DB_PASSWORD) or db_ins_die(__FILE__, __LINE__, mysql_error());
-    mysql_select_db(DB_NAME) or db_ins_die(__FILE__, __LINE__, mysql_error());
-
-    if (DB_VERSION > 4) {
-        mysql_query("SET NAMES 'utf8'") or db_ins_die(__FILE__, __LINE__, mysql_error());
-    }
-}
 
 function get_last_number() {
-    $db_result = mysql_query("SELECT last_number FROM ".DB_PREFIX."settings") or db_die(__FILE__, __LINE__, mysql_error());
-    $db_row    = mysql_fetch_row($db_result);
+    $db_result = mysqli_query("SELECT last_number FROM ".DB_PREFIX."settings") or db_die(__FILE__, __LINE__, mysqli_error());
+    $db_row    = mysqli_fetch_row($db_result);
 
     return $db_row[0];
 }
 
 function increase_last_number() {
     //last-number+1操作
-    mysql_query("UPDATE ".DB_PREFIX."settings SET last_number = (last_number + 1)") or db_die(__FILE__, __LINE__, mysql_error());
+    mysqli_query("UPDATE ".DB_PREFIX."settings SET last_number = (last_number + 1)") or db_die(__FILE__, __LINE__, mysqli_error());
 
-    return (mysql_affected_rows() > 0) ? true : false;
+    return (mysqli_affected_rows() > 0) ? true : false;
 }
 
 function code_exists($code) {
+     $links=mysqli_connect(DB_HOSTNAME, DB_USERNAME, DB_PASSWORD,DB_NAME);
     //判断短码是否存在
-    $db_result = mysql_query("SELECT COUNT(id) FROM ".DB_PREFIX."urls WHERE BINARY code = '$code'") or db_die(__FILE__, __LINE__, mysql_error());
-    $db_row    = mysql_fetch_row($db_result);
-
+    $query = "SELECT COUNT(id) FROM ".DB_PREFIX."urls WHERE BINARY code = '$code'";
+    $db_result = mysqli_query($links,$query);
+    $db_row    = mysqli_fetch_row($db_result);
+     //var_dump($row);die;
     return ($db_row[0] > 0) ? true : false;
 }
 
 function alias_exists($alias) {
     //判断alias是否存在
-    $db_result = mysql_query("SELECT COUNT(id) FROM ".DB_PREFIX."urls WHERE BINARY alias = '$alias'") or db_die(__FILE__, __LINE__, mysql_error());
-    $db_row    = mysql_fetch_row($db_result);
+    $db_result = query("SELECT COUNT(id) FROM ".DB_PREFIX."urls WHERE BINARY alias = '$alias'") or db_die(__FILE__, __LINE__, mysqli_error());
+    $db_row    = mysqli_fetch_row($db_result);
 
     return ($db_row[0] > 0) ? true : false;
 }
@@ -59,14 +42,68 @@ function alias_exists($alias) {
 //
 function url_exists($url) {
     //查出id，和code
-    $db_result = mysql_query("SELECT id, code FROM ".DB_PREFIX."urls WHERE url LIKE '$url'") or db_die(__FILE__, __LINE__, mysql_error());
+    $db_result = mysqli_query("SELECT id, code FROM ".DB_PREFIX."urls WHERE url LIKE '$url'") or db_die(__FILE__, __LINE__, mysqli_error());
 
-    if (mysql_num_rows($db_result) > 0) {
+    if (mysqli_num_rows($db_result) > 0) {
     //返回id ，code
-        return mysql_fetch_row($db_result);
+        return mysqli_fetch_row($db_result);
     }
 
     return false;
+}
+
+function update_url($id, $alias) {
+    //修改数据
+    $links=mysqli_connect(DB_HOSTNAME, DB_USERNAME, DB_PASSWORD,DB_NAME);
+    mysqli_query($links,"UPDATE ".DB_PREFIX."urls SET url = '$alias' WHERE id = '$id'") or db_die(__FILE__, __LINE__, mysqli_error());
+}
+/*
+function update_url_st(){
+    mysqli_query("INSERT INTO ").DB_PREFIX."urls SET st"
+}
+*/ 
+function get_url($alias) {
+
+    $db_result = mysqli_query("SELECT url FROM ".DB_PREFIX."urls WHERE BINARY code = '$alias' ") or db_die(__FILE__, __LINE__, mysqli_error());
+    //mysqli_num_rows() 函数返回结果集中行的数目
+    //mysqli_fetch_row() 函数从结果集中取得一行作为数字数组
+    if (mysqli_num_rows($db_result) > 0) {
+        $db_row = mysqli_fetch_row($db_result);
+        return $db_row[0];
+    }
+
+    return false;
+}
+
+function get_code($qrcode_id) {
+
+    $links=mysqli_connect(DB_HOSTNAME, DB_USERNAME, DB_PASSWORD,DB_NAME);
+
+    $db_result = mysqli_query($links,"SELECT code FROM ".DB_PREFIX."urls WHERE id = '$qrcode_id' ") or db_die(__FILE__, __LINE__, mysqli_error());
+    //mysqli_num_rows() 函数返回结果集中行的数目
+    //mysqli_fetch_row() 函数从结果集中取得一行作为数字数组
+    if (mysqli_num_rows($db_result) > 0) {
+        $db_row = mysqli_fetch_row($db_result);
+        return $db_row[0];
+    }
+
+    return false;
+
+    
+}
+
+
+
+
+
+
+
+
+
+
+
+function db_die($filename, $line, $message) {
+    die("文件: $filename<br />行: $line<br />信息: $message");
 }
 
 function generate_code($number) {
@@ -83,54 +120,13 @@ function generate_code($number) {
     return $codes{$number}.$out;
 }
 
-function insert_url($url, $code) {
-
-    mysql_query("INSERT INTO ".DB_PREFIX."urls (url, code ,  date_added) VALUES ('$url', '$code', NOW())") or db_die(__FILE__, __LINE__, mysql_error());    //插入数据
-
-    return mysql_insert_id();
-}
-
-function update_url($id, $alias) {
-    //修改数据
-    mysql_query("UPDATE ".DB_PREFIX."urls SET url = '$alias' WHERE id = '$id'") or db_die(__FILE__, __LINE__, mysql_error());
-}
-/*
-function update_url_st(){
-    mysql_query("INSERT INTO ").DB_PREFIX."urls SET st"
-}
-*/ 
-function get_url($alias) {
-
-    $db_result = mysql_query("SELECT url FROM ".DB_PREFIX."urls WHERE BINARY code = '$alias' ") or db_die(__FILE__, __LINE__, mysql_error());
-    //mysql_num_rows() 函数返回结果集中行的数目
-    //mysql_fetch_row() 函数从结果集中取得一行作为数字数组
-    if (mysql_num_rows($db_result) > 0) {
-        $db_row = mysql_fetch_row($db_result);
-        return $db_row[0];
-    }
-
-    return false;
-}
-
-function get_code($qrcode_id) {
-
-    $db_result = mysql_query("SELECT code FROM ".DB_PREFIX."urls WHERE id = '$qrcode_id' ") or db_die(__FILE__, __LINE__, mysql_error());
-    //mysql_num_rows() 函数返回结果集中行的数目
-    //mysql_fetch_row() 函数从结果集中取得一行作为数字数组
-    if (mysql_num_rows($db_result) > 0) {
-        $db_row = mysql_fetch_row($db_result);
-        return $db_row[0];
-    }
-
-    return false;
-}
-
 function get_hostname() {
     //parse_url — 解析 URL，返回其组成部分
     $data = parse_url(SITE_URL);
     
     return $data['host'];
 }
+
 
 function get_domain() {
     $hostname = get_hostname();
@@ -153,6 +149,7 @@ function print_errors() {
         echo "</div>\n";
     }
 }
+
 function is_admin_login() {
     if (@$_SESSION['admin'] == 1) {
         return true;
