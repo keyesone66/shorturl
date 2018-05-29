@@ -1,23 +1,8 @@
 #功能简介
 >index.php实现<br>
 由短网址生成二维码，短网址的（短代码）和（原网址）入库。
-
->index2.php实现<br>
-实现原网址生成短网址，原网址生成二维码，（短网址的短代码）和（原网址）入库。并且完成如下操作：<br>
-删除admin下面的qrcode.php和phpqrcode.php文件；<br>
-去掉admin/index.php<br> 
-88行:
-
->		</a class='del' href=\"index.php?qrcode_id=".$u_id."\">生成二维码</a></td>\n";
->25~30行：
-
->	
-	$qrcode_id = (int) @$_GET['qrcode_id'];
-	//var_dump($qrcode_id);
-	if ($qrcode_id > 0) {
-    	header("Location:qrcode.php?qrcode_id=$qrcode_id");
-   	exit();
-	}
+后台账号：admin
+后台密码：123456
 
 # 安装方式
 将“shorturl.sql”导入数据库，并编辑“config.php”
