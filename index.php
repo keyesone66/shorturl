@@ -10,16 +10,15 @@ require_once("config.php");
 require_once("functions.php");
 require_once("phpqrcode.php");
 
-db_connect();
-
 
 
 if (count($_GET) > 0) {
     //mysql_real_escape_string() 函数转义 SQL 语句中使用的字符串中的特殊字符
     //trim — 去除字符串首尾处的空白字符（或者其他字符）
-    $url   = mysql_real_escape_string(trim($_GET['url']));
+    $url   = mysqli_real_escape_string($links,trim($_GET['url']));
+
     /*$alias = mysql_real_escape_string(trim($_GET['alias']));*/
-    //var_dump($alias);die;
+    //var_dump($url);die;
     //preg_match — 执行匹配正则表达式
     //define('URL_PROTOCOLS', 'http|https|ftp|ftps|mailto|news|mms|rtmp|rtmpt|ed2k'); //允许缩短的网址的协议
     if (!preg_match("/^(".URL_PROTOCOLS.")\:\/\//i", $url)) {
@@ -68,13 +67,17 @@ if (count($_GET) > 0) {
 
         $url=$_GET['yurl'];
         //var_dump($code);
+        
         if (code_exists($code)) {
             echo '短网址已经生产二维码';
         }
-        $id = insert_url($url, $code);
+
+
+        $res =  mysqli_query($links,"INSERT INTO ".DB_PREFIX."urls (url, code ,  date_added) VALUES ('$url', '$code', NOW())");
+        $id = mysqli_insert_id($links);
    
-        //$short_url = SITE_URL."/".$code; 
-        $value =  $url; //二维码内容     
+        $short_url = SITE_URL."/".$code; 
+        $value =  $short_url; //二维码内容     
         $errorCorrectionLevel = 'L'; //容错级别     
         $matrixPointSize = 6; //生成图片大小  
   
