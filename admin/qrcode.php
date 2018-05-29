@@ -10,12 +10,14 @@ if (!is_admin_login()) {
 }
 
 require_once("header.php");
-db_connect();
+
 
 require_once("phpqrcode.php");
 
 $qrcode_id=$_GET['qrcode_id'];
+
 $code= get_code($qrcode_id);
+
 //var_dump($code);die;
 $url = SITE_URL."/".$code; 
 $value =  $url; //二维码内容     
